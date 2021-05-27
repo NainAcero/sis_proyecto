@@ -15,9 +15,15 @@ class CreateProformasTable extends Migration
     {
         Schema::create('proformas', function (Blueprint $table) {
             $table->id();
-            $table->string('num_proforma', 20)->nullable();
+            $table->string('num_proforma', 20);
             $table->time('hora_ingreso');
-            $table->string('observacion', 256);
+            $table->string('documento', 256)->nullable();
+
+            $table->unsignedBigInteger('tecnico_id')->nullable();
+            $table->foreign('tecnico_id')->references('id')->on('users');
+
+            $table->string('nombre_vendedor', 256)->nullable();
+
             $table->boolean('salio')->default(0);
             $table->timestamps();
         });

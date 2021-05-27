@@ -8,9 +8,15 @@
         </div>
     </div>
 
+    @guest
+
+    @else
     <div class="col-md-2 col-lg-2 col-sm-12 mt-2 mb-2 text-right mr-2">
-     	<button type="button" wire:click="doAction(2)" class="btn btn-dark">
-     	 	<i class="la la-file la-lg"></i>
-        </button>
-    </div>
+        <button type="button" wire:click="doAction(2)" class="btn btn-dark">
+             <i class="la la-file la-lg"></i>
+       </button>
+   </div>
+    @endguest
+
+
 </div>

@@ -76,6 +76,7 @@
 
                 <div class="nav-logo align-self-center">
                     <a class="navbar-brand" href="">
+                        <img alt="logo" src="{{ asset('images/logo.jpeg') }}">
                         <span class="navbar-brand-name">SIS_REGISTRO</span>
                     </a>
                 </div>
@@ -97,6 +98,52 @@
                         </svg>
                     </li>
                 </ul>
+
+                <ul class="navbar-item flex-row nav-dropdowns">
+                    @guest
+
+                    @else
+                    <li class="nav-item dropdown user-profile-dropdown order-lg-0 order-1">
+                        <a href="javascript:void(0);" class="nav-link dropdown-toggle user" id="user-profile-dropdown"
+                            data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <div class="media">
+                                <img src="images/user.png" class="img-fluid" alt="admin-profile">
+                                <div class="media-body align-self-center">
+                                    <h6>{{ Auth::user()->name }} ( {{ Auth::user()->role }} )</h6>
+                                </div>
+                            </div>
+
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                class="feather feather-chevron-down">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </a>
+
+                        <div class="dropdown-menu position-absolute animated fadeInUp"
+                            aria-labelledby="user-profile-dropdown">
+                            <div class="">
+
+                                <div class="dropdown-item">
+                                    <form id="form1" class="form-horizontal" method="POST" action="{{ route('logout') }}">
+                                        {{ csrf_field() }}
+                                    </form>
+
+                                    <a class="" onclick="document.getElementById('form1').submit();"
+                                        href="javascript:void(0)"><svg xmlns="http://www.w3.org/2000/svg" width="24"
+                                            height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                            class="feather feather-log-out">
+                                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                                            <polyline points="16 17 21 12 16 7"></polyline>
+                                            <line x1="21" y1="12" x2="9" y2="12"></line>
+                                        </svg> Salir</a>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                    @endguest
+                </ul>
             </header>
         </div>
         <!-- END NAVBAR -->
@@ -116,8 +163,21 @@
                             </a>
                         </li>
                     </ul>
-
                     <ul class="list-unstyled menu-categories" id="topAccordion">
+                        @guest
+
+                        @else
+                            @if(Auth::user()->role == "ADMIN")
+                                <li class="menu single-menu">
+                                    <a href="{{ url('users') }}" >
+                                        <div class="">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-bar-chart"><line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="16"></line></svg>
+                                            <span>USUARIOS</span>
+                                        </div>
+                                    </a>
+                                </li>
+                            @endif
+                        @endguest
                         <li class="menu single-menu">
                             <a href="{{ url('/') }}" >
                                 <div class="">
@@ -134,6 +194,17 @@
                                 </div>
                             </a>
                         </li>
+                        @guest
+                        <li class="menu single-menu">
+                            <a href="{{ url('login') }}" >
+                                <div class="">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-users"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                                    <span>LOGIN</span>
+                                </div>
+                            </a>
+                        </li>
+                        @else
+                        @endguest
                     </ul>
                 </nav>
             </div>

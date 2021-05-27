@@ -15,6 +15,9 @@ class Garantia extends Model
         'celular',
         'fecha_ingreso',
         'problema',
+        'documento',
+        'observacion',
+        'tecnico_id',
         'salio',
     ];
 }

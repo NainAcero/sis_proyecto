@@ -19,5 +19,10 @@ Route::get('/', function () {
     return view('garantia');
 });
 
+Route::get('/dashboard', function () {
+    return view('garantia');
+});
+
 Route::view('proforma', 'proforma');
+Route::view('users', 'user');
 

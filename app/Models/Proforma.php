@@ -12,7 +12,13 @@ class Proforma extends Model
     protected $fillable = [
         'num_proforma',
         'hora_ingreso',
-        'observacion',
-        'salio'
+        'salio',
+        'tecnico_id',
+        'nombre_vendedor',
+        'documento'
     ];
+
+    public function tecnico() {
+    	return $this->belongsTo(User::class , 'tecnico_id');
+    }
 }

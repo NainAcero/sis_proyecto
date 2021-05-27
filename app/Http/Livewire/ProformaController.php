@@ -4,18 +4,20 @@ namespace App\Http\Livewire;
 
 use App\Models\Garantia;
 use App\Models\Proforma;
+use App\Models\User;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Livewire\WithPagination;
+use Webpatser\Uuid\Uuid;
 
 class ProformaController extends Component
 {
     use WithPagination;
     use WithFileUploads;
 
-    public $dni, $nombre, $celular, $fecha_ingreso, $problema, $num_proforma, $hora_ingreso, $observacion, $archivo;
+    public $num_proforma, $hora_ingreso, $observacion, $archivo, $tecnico = 'Elegir', $vendedor = '';
     public $selected_id, $search, $event;
-    public $action = 1, $pagination = 30;
+    public $action = 1, $pagination = 20;
 
     public function mount() {
         $this->event = false;
@@ -23,19 +25,26 @@ class ProformaController extends Component
 
     public function render()
     {
+        $tecnicos = User::where('role', '=', 'TECNICO')->get();
+        $vendedores = User::where('role', '=', 'ALMACEN')->get();
+
         if(strlen($this->search) > 0){
             $proformas = Proforma::where('num_proforma', 'like', '%'.$this->search.'%')
                 ->paginate($this->pagination);
 
             return view('livewire.proforma.component', [
-                "info" => $proformas
+                "info" => $proformas,
+                "tecnicos" => $tecnicos,
+                "vendedores" => $vendedores,
             ]);
         }else{
             $proformas = Proforma::orderBy('id', 'desc')
                 ->paginate($this->pagination);
 
             return view('livewire.proforma.component', [
-                "info" => $proformas
+                "info" => $proformas,
+                "tecnicos" => $tecnicos,
+                "vendedores" => $vendedores,
             ]);
         }
     }
@@ -50,15 +59,23 @@ class ProformaController extends Component
         $this->action = $action;
     }
 
+    public function edit($id){
+        $record = Proforma::findOrFail($id);
+        $this->selected_id = $id;
+        $this->num_proforma = $record->num_proforma;
+        $this->hora_ingreso = $record->hora_ingreso;
+        $this->observacion = $record->observacion;
+        $this->vendedor = $record->nombre_vendedor;
+        $this->action = 2;
+        $this->event = false;
+    }
+
     public function resetInput(){
-        $this->dni = '';
-        $this->nombre = '';
-        $this->celular = '';
         $this->fecha_ingreso = null;
-        $this->problema = '';
+        $this->tecnico = 'Elegir';
+        $this->vendedor = '';
         $this->num_proforma = '';
         $this->hora_ingreso = null;
-        $this->observacion = '';
         $this->selected_id = null;
         $this->action = 1;
         $this->search = '';
@@ -69,56 +86,60 @@ class ProformaController extends Component
     public function StoreOrUpdate(){
 
         $this->validate([
-            'dni' => 'required',
-            'nombre' => 'required',
-            'celular' => 'required',
-            'problema' => 'required',
+            'vendedor' => 'required',
+            'vendedor' => 'not_in:Elegir',
             'archivo' => 'max:1024', // 1MB Max
         ]);
 
         $this->fecha_ingreso = \Carbon\Carbon::now();
+        $uuid = Uuid::generate()->string;
 
         if($this->selected_id <= 0){
-            $garantia = Garantia::create([
-                'dni' => $this->dni,
-                'nombre' => $this->nombre,
-                'celular' => $this->celular,
-                'problema' => $this->problema,
-                'fecha_ingreso' => $this->fecha_ingreso,
-            ]);
-
             $proforma = Proforma::create([
-                "num_proforma" => $this->getCode($this->num_proforma),
-                "hora_ingreso" => $this->fecha_ingreso->format('H:i:s'),
-                "observacion" => $this->observacion,
+                "num_proforma" => $this->num_proforma ?? $this->getCode($this->num_proforma, $this->fecha_ingreso->format('m')),
+                "hora_ingreso" => $this->fecha_ingreso->format('h:i:s'),
+                'documento' => ($this->archivo == null)? null :  $uuid . '.pdf',
+                "tecnico_id" => ($this->tecnico == "Elegir")? null : $this->tecnico,
+                "nombre_vendedor" => $this->vendedor,
             ]);
 
             if($this->archivo != null){
-                $this->archivo->store('public');
+                $this->archivo->storeAs('public', $uuid . '.pdf');
             }
 
             event(new \App\Events\EventNew("new-registro"));
 
             $this->emit('msgok', 'Registrado con éxito');
         }else{
-
+            $record = Proforma::find($this->selected_id);
+            $record->update([
+                "num_proforma" => $this->num_proforma ?? $this->getCode($this->num_proforma, $this->fecha_ingreso->format('m')),
+                "hora_ingreso" => $this->fecha_ingreso->format('h:i:s'),
+                'documento' => ($this->archivo == null)? null :  $uuid . '.pdf',
+                "tecnico_id" => ($this->tecnico == "Elegir")? null : $this->tecnico,
+                "nombre_vendedor" => $this->vendedor,
+            ]);
+            if($this->archivo != null){
+                $this->archivo->storeAs('public', $uuid . '.pdf');
+            }
+            $this->emit('msgok', 'Actualizado con éxito');
         }
 
         $this->resetInput();
     }
 
-    private function getCode($code) {
+    private function getCode($code, $mes) {
         // PRO-05-00001
         if(floor($code / 10000) > 0 ) {
-            return 'PRO-05-' . $code;
+            return 'PRO-'.$mes.'-' . $code;
         } else if(floor($code / 1000) > 0){
-            return 'PRO-05-0' . $code;
+            return 'PRO-'.$mes.'-0' . $code;
         } else if(floor($code / 100) > 0){
-            return 'PRO-05-00' . $code;
+            return 'PRO-'.$mes.'-00' . $code;
         } else if(floor($code / 10) > 0){
-            return 'PRO-05-000' . $code;
+            return 'PRO-'.$mes.'-000' . $code;
         } else if($code > 0){
-            return 'PRO-05-0000' . $code;
+            return 'PRO-'.$mes.'-0000' . $code;
         } else{
             return 'SIN-CODE';
         }
@@ -126,6 +147,7 @@ class ProformaController extends Component
 
     protected $listeners = [
         'finish'     => 'finish',
+        'deleteRow'     => 'destroy',
     ];
 
     public function finish(int $id){
@@ -133,5 +155,16 @@ class ProformaController extends Component
         $record->salio = 1;
         $record->save();
         event(new \App\Events\EventNew("notification"));
+    }
+
+    public function destroy(int $id){
+        try {
+            $record = Proforma::findOrFail($id);
+            $record->delete();
+            $this->resetInput();
+            $this->emit('msgok', 'Registro eliminado con éxito');
+        } catch (\Exception $exception) {
+            dd($exception);
+        }
     }
 }

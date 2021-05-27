@@ -4,18 +4,20 @@ namespace App\Http\Livewire;
 
 use App\Models\Garantia;
 use App\Models\Proforma;
+use App\Models\User;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Livewire\WithPagination;
+use Webpatser\Uuid\Uuid;
 
 class GarantiaController extends Component
 {
     use WithPagination;
     use WithFileUploads;
 
-    public $dni, $nombre, $celular, $fecha_ingreso, $problema, $num_proforma, $hora_ingreso, $observacion, $archivo;
+    public $dni, $nombre, $celular, $fecha_ingreso, $problema, $tecnico = 'Elegir', $hora_ingreso, $observacion, $archivo;
     public $selected_id, $search, $event;
-    public $action = 1, $pagination = 30;
+    public $action = 1, $pagination = 20;
 
     public function mount() {
         $this->event = false;
@@ -23,20 +25,23 @@ class GarantiaController extends Component
 
     public function render()
     {
+        $tecnicos = User::where('role', '=', 'TECNICO')->get();
         if(strlen($this->search) > 0){
             $garantias = Garantia::where('nombre', 'like', '%'.$this->search.'%')
                 ->orWhere('dni', 'like', '%'.$this->search.'%')
                 ->paginate($this->pagination);
 
             return view('livewire.garantia.component', [
-                "info" => $garantias
+                "info" => $garantias,
+                "tecnicos" => $tecnicos
             ]);
         }else{
             $garantias = Garantia::orderBy('id', 'desc')
                 ->paginate($this->pagination);
 
             return view('livewire.garantia.component', [
-                "info" => $garantias
+                "info" => $garantias,
+                "tecnicos" => $tecnicos
             ]);
         }
     }
@@ -49,6 +54,21 @@ class GarantiaController extends Component
     public function doAction($action){
         $this->resetInput();
         $this->action = $action;
+    }
+
+    public function edit($id){
+        $record = Garantia::findOrFail($id);
+        $this->selected_id = $id;
+        $this->dni = $record->dni;
+        $this->nombre = $record->nombre;
+        $this->celular = $record->celular;
+        $this->fecha_ingreso = $record->fecha_ingreso;
+        $this->problema = $record->problema;
+        $this->observacion = $record->observacion;
+        $this->tecnico = $record->tecnico_id;
+        $this->dni = $record->dni;
+        $this->action = 2;
+        $this->event = false;
     }
 
     public function resetInput(){
@@ -64,20 +84,18 @@ class GarantiaController extends Component
         $this->action = 1;
         $this->search = '';
         $this->archivo = null;
+        $this->tecnico = 'Elegir';
         $this->event = false;
     }
 
     public function StoreOrUpdate(){
 
         $this->validate([
-            'dni' => 'required',
-            'nombre' => 'required',
-            'celular' => 'required',
-            'problema' => 'required',
             'archivo' => 'max:1024', // 1MB Max
         ]);
 
         $this->fecha_ingreso = \Carbon\Carbon::now();
+        $uuid = Uuid::generate()->string;
 
         if($this->selected_id <= 0){
             $garantia = Garantia::create([
@@ -86,22 +104,33 @@ class GarantiaController extends Component
                 'celular' => $this->celular,
                 'problema' => $this->problema,
                 'fecha_ingreso' => $this->fecha_ingreso,
-            ]);
-
-            $proforma = Proforma::create([
-                "num_proforma" => $this->getCode($this->num_proforma),
-                "hora_ingreso" => $this->fecha_ingreso->format('H:i:s'),
-                "observacion" => $this->observacion,
+                'observacion' => $this->observacion,
+                'tecnico_id' => ($this->tecnico == "Elegir")? null : $this->tecnico,
+                'documento' => $uuid . '.pdf',
             ]);
 
             if($this->archivo != null){
-                $this->archivo->store('public');
+                $this->archivo->storeAs('public', $uuid . '.pdf');
             }
 
             event(new \App\Events\EventNew("new-registro"));
             $this->emit('msgok', 'Registrado con éxito');
         }else{
-
+            $record = Garantia::find($this->selected_id);
+            $record->update([
+                'dni' => $this->dni,
+                'nombre' => $this->nombre,
+                'celular' => $this->celular,
+                'problema' => $this->problema,
+                'fecha_ingreso' => $this->fecha_ingreso,
+                'observacion' => $this->observacion,
+                'tecnico_id' => ($this->tecnico == "Elegir")? null : $this->tecnico,
+                'documento' => $uuid . '.pdf',
+            ]);
+            if($this->archivo != null){
+                $this->archivo->storeAs('public', $uuid . '.pdf');
+            }
+            $this->emit('msgok', 'Actualizado con éxito');
         }
 
         $this->resetInput();
@@ -126,6 +155,7 @@ class GarantiaController extends Component
 
     protected $listeners = [
         'finish'     => 'finish',
+        'deleteRow'     => 'destroy',
     ];
 
     public function finish(int $id){
@@ -133,5 +163,16 @@ class GarantiaController extends Component
         $record->salio = 1;
         $record->save();
         event(new \App\Events\EventNew("notification"));
+    }
+
+    public function destroy(int $id){
+        try {
+            $record = Garantia::findOrFail($id);
+            $record->delete();
+            $this->resetInput();
+            $this->emit('msgok', 'Registro eliminado con éxito');
+        } catch (\Exception $exception) {
+            dd($exception);
+        }
     }
 }
