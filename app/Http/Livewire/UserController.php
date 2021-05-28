@@ -90,7 +90,7 @@ class UserController extends Component
                 'password' => bcrypt($this->password),
             ]);
 
-            $this->emit('msgok', 'Registrado con éxito');
+            $this->emit('msgok', 'Registrado con éxito' . $this->role);
         }else{
             $this->validate([
                 'name' => 'required',
@@ -111,5 +111,20 @@ class UserController extends Component
         }
 
         $this->resetInput();
+    }
+
+    protected $listeners = [
+        'deleteRow'     => 'destroy',
+    ];
+
+    public function destroy(int $id){
+        try {
+            $record = User::findOrFail($id);
+            $record->delete();
+            $this->resetInput();
+            $this->emit('msgok', 'Registro eliminado con éxito');
+        } catch (\Exception $exception) {
+            dd($exception);
+        }
     }
 }
