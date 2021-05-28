@@ -26,7 +26,7 @@
                 </div>
                 <div class="form-group col-lg-8 col-sm-12 mb-8">
                     <label >Contraseña **</label>
-                    <input wire:model.lazy="password" type="text" class="form-control"  placeholder="Contraseña">
+                    <input wire:model.lazy="password" type="password" class="form-control"  placeholder="Contraseña">
                     @error('password') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
             </div>
