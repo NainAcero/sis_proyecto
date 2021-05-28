@@ -61,6 +61,7 @@
         },
         function() {
             console.log('ID', id);
+            window.livewire.emit('deleteRow', id);
             //toastr.success('info', 'Registro eliminado con éxito')
             swal.close()
         })
