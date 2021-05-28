@@ -63,17 +63,26 @@ class UserController extends Component
         $this->event = false;
     }
 
+    public function edit($id){
+        $record = User::findOrFail($id);
+        $this->selected_id = $id;
+        $this->name = $record->name;
+        $this->email = $record->email;
+        $this->role = $record->role;
+        $this->action = 2;
+        $this->event = false;
+    }
+
     public function StoreOrUpdate(){
-
-        $this->validate([
-            'name' => 'required',
-            'email' => 'required|unique:users',
-            'role' => 'required',
-            'role' => 'not_in:Elegir',
-            'password' => 'required',
-        ]);
-
         if($this->selected_id <= 0){
+            $this->validate([
+                'name' => 'required',
+                'email' => 'required|unique:users',
+                'role' => 'required',
+                'role' => 'not_in:Elegir',
+                'password' => 'required',
+            ]);
+
             $user = User::create([
                 'name' => $this->name,
                 'email' => $this->email,
@@ -83,7 +92,22 @@ class UserController extends Component
 
             $this->emit('msgok', 'Registrado con éxito');
         }else{
+            $this->validate([
+                'name' => 'required',
+                'email' => 'required',
+                'role' => 'required',
+                'role' => 'not_in:Elegir',
+            ]);
 
+            $record = User::find($this->selected_id);
+            $record->name = $this->name;
+            $record->email = $this->email;
+            $record->role = $this->role;
+            if(strlen($this->password) > 3){
+                $record->password = bcrypt($this->password);
+            }
+            $record->save();
+            $this->emit('msgok', 'Actualizado con éxito');
         }
 
         $this->resetInput();

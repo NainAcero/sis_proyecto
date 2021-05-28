@@ -18,9 +18,9 @@
                     <label >Role **</label>
                     <select wire:model.lazy="role" class="form-control text-center">
                         <option value="Elegir" disabled="">Elegir</option>
-                        <option value="3">TECNICO</option>
-                        <option value="2">ALMACEN</option>
-                        <option value="1">ADMIN</option>
+                        <option value="TECNICO">TECNICO</option>
+                        <option value="ALMACEN">ALMACEN</option>
+                        <option value="ADMIN">ADMIN</option>
                     </select>
                     @error('role') <span class="text-danger">{{ $message }}</span> @enderror
                 </div>
